@@ -1,0 +1,16 @@
+{
+  "name": "Papa's Countdown",
+  "short_name": "Papa's Countdown",
+  "description": "Papa loves you, Leo!",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1b3d",
+  "theme_color": "#0f1b3d",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}
