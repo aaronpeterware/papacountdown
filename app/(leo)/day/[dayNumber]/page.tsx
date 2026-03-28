@@ -366,6 +366,73 @@ function VideoScreen({ capsule, onBack }: { capsule: any; onBack: () => void }) 
   );
 }
 
+// Journal screen for the day
+function JournalScreen({ rosterPeriodId, dayNumber, onBack }: { rosterPeriodId: string; dayNumber: number; onBack: () => void }) {
+  const [entries, setEntries] = useState<Array<{id: string; voice_recording_url: string | null; drawing_image_url: string | null; day_number: number}>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/journal')
+      .then(r => r.json())
+      .then((d: Array<{id: string; day_number: number; voice_recording_url: string | null; drawing_image_url: string | null}>) => {
+        setEntries(Array.isArray(d) ? d.filter(e => e.day_number === dayNumber) : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [dayNumber]);
+
+  void rosterPeriodId; // used by parent for context
+
+  const voices = entries.filter(e => e.voice_recording_url);
+  const drawings = entries.filter(e => e.drawing_image_url);
+
+  return (
+    <motion.div className="min-h-screen pb-8 pt-4 px-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <div className="flex items-center gap-4 mb-6">
+        <motion.button className="w-14 h-14 bg-yellow-400 rounded-2xl flex items-center justify-center text-2xl text-black font-bold shadow-lg" whileTap={{ scale: 0.8 }} onClick={onBack}>←</motion.button>
+        <h1 className="text-2xl font-black text-pink-300">📓 Day {dayNumber} Journal</h1>
+      </div>
+      {loading ? (
+        <div className="text-center py-12"><motion.div className="text-5xl" animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2 }}>⭐</motion.div></div>
+      ) : (
+        <div className="space-y-6">
+          {voices.length > 0 && (
+            <div>
+              <h2 className="text-lg font-black text-white/70 mb-3">🎙️ Leo&apos;s Voice Messages</h2>
+              <div className="space-y-3">
+                {voices.map((e, i) => (
+                  <div key={e.id} className="bg-white/10 rounded-2xl p-4">
+                    <p className="text-white/50 text-xs mb-2">Message {i + 1}</p>
+                    <audio controls className="w-full" src={e.voice_recording_url!}><track kind="captions" /></audio>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {drawings.length > 0 && (
+            <div>
+              <h2 className="text-lg font-black text-white/70 mb-3">🎨 Leo&apos;s Drawings</h2>
+              <div className="grid grid-cols-2 gap-3">
+                {drawings.map(e => (
+                  <div key={e.id} className="bg-white/10 rounded-2xl overflow-hidden">
+                    <img src={e.drawing_image_url!} alt="Leo drawing" className="w-full aspect-square object-cover" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {entries.length === 0 && (
+            <div className="text-center py-12">
+              <span className="text-5xl">🎨</span>
+              <p className="text-white/50 mt-4">No journal entries for this day yet!</p>
+            </div>
+          )}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
 export default function DayPage() {
   const params = useParams();
   const router = useRouter();
@@ -425,7 +492,10 @@ export default function DayPage() {
         {view === 'bedtime' && <BedtimeScreen key="bedtime" capsule={capsule} dayNumber={dayNumber} onBack={() => setView('cards')} />}
         {view === 'wisdom' && <WisdomScreen key="wisdom" capsule={capsule} dayNumber={dayNumber} onBack={() => setView('cards')} />}
         {view === 'video' && <VideoScreen key="video" capsule={capsule} onBack={() => setView('cards')} />}
+        {view === 'journal' && <JournalScreen key="journal" rosterPeriodId={capsule.roster_period_id} dayNumber={dayNumber} onBack={() => setView('cards')} />}
       </AnimatePresence>
     </div>
   );
 }
+
+// Journal screen - moved outside default export
