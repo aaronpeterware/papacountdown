@@ -250,6 +250,122 @@ function WorksiteScreen({ capsule, onBack }: { capsule: any; onBack: () => void 
   );
 }
 
+// Bedtime story screen
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function BedtimeScreen({ capsule, dayNumber, onBack }: { capsule: any; dayNumber: number; onBack: () => void }) {
+  const [playing, setPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  return (
+    <motion.div className="min-h-screen flex flex-col items-center justify-center px-6 pb-12" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ background: 'linear-gradient(180deg, #0a0a2e 0%, #1a0a3e 100%)' }}>
+      <BackButton onBack={onBack} />
+      <motion.div className="text-6xl mb-4" animate={{ y: [0, -8, 0] }} transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}>🌙</motion.div>
+      <h2 className="text-2xl font-black text-yellow-400 text-center mb-2">{capsule.bedtime_story_title || `Day ${dayNumber} Story`}</h2>
+      {capsule.bedtime_story_illustration_url && (
+        <motion.img src={capsule.bedtime_story_illustration_url} alt="Story illustration" className="w-full max-w-xs rounded-3xl my-6 shadow-2xl border-2 border-purple-400/30" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring' }} />
+      )}
+      <motion.button
+        className={`w-28 h-28 rounded-full flex items-center justify-center text-5xl shadow-lg ${playing ? 'bg-gradient-to-br from-purple-500 to-indigo-600 shadow-[0_0_30px_rgba(139,92,246,0.5)]' : 'bg-gradient-to-br from-yellow-400 to-amber-500 shadow-[0_0_30px_rgba(251,191,36,0.4)]'}`}
+        whileTap={{ scale: 0.85 }}
+        onClick={() => {
+          if (!capsule.bedtime_story_audio_url) return;
+          if (audioRef.current) { audioRef.current.pause(); }
+          if (playing) { setPlaying(false); return; }
+          const a = new Audio(capsule.bedtime_story_audio_url);
+          audioRef.current = a;
+          setPlaying(true);
+          a.play();
+          a.onended = () => setPlaying(false);
+        }}
+        animate={playing ? { scale: [1, 1.05, 1] } : {}}
+        transition={{ repeat: Infinity, duration: 1.5 }}
+      >
+        {playing ? '⏸️' : '▶️'}
+      </motion.button>
+      <p className="text-white/40 text-sm mt-4">{playing ? 'Tap to pause' : 'Tap to start the story!'}</p>
+      {playing && (
+        <div className="flex items-end gap-1 mt-6 h-8">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <motion.div key={i} className="w-2 bg-purple-400 rounded-full" animate={{ height: [6, 20 + 12 * Math.random(), 6] }} transition={{ repeat: Infinity, duration: 0.6 + 0.4 * Math.random(), delay: 0.08 * i }} />
+          ))}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+// Wisdom card screen
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function WisdomScreen({ capsule, dayNumber, onBack }: { capsule: any; dayNumber: number; onBack: () => void }) {
+  const [flipped, setFlipped] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const themes: Record<string, string> = { space: 'from-indigo-800 to-purple-900', jungle: 'from-green-700 to-emerald-900', ocean: 'from-blue-600 to-cyan-800', mountains: 'from-gray-600 to-slate-800', desert: 'from-amber-600 to-orange-800', forest: 'from-green-800 to-teal-900', city: 'from-zinc-600 to-gray-800' };
+  const icons: Record<string, string> = { space: '🌌', jungle: '🌴', ocean: '🌊', mountains: '⛰️', desert: '🏜️', forest: '🌲', city: '🌃' };
+  const theme = capsule.wisdom_card_theme || 'space';
+  const grad = themes[theme] || themes.space;
+  const icon = icons[theme] || '⭐';
+  const audioUrl = `https://bcvcxwrxusuvsvqdzqkd.supabase.co/storage/v1/object/public/wisdom-card-illustrations/wisdom-audio/day-${dayNumber}/wisdom.mp3`;
+
+  return (
+    <motion.div className="min-h-screen flex flex-col items-center justify-center px-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <BackButton onBack={() => { audioRef.current?.pause(); onBack(); }} />
+      <motion.div
+        className="w-72 h-96 cursor-pointer"
+        whileTap={{ scale: 0.95 }}
+        onClick={() => {
+          const next = !flipped;
+          setFlipped(next);
+          if (next) {
+            audioRef.current?.pause();
+            const a = new Audio(audioUrl);
+            audioRef.current = a;
+            setPlaying(true);
+            a.play().catch(() => {});
+            a.onended = () => setPlaying(false);
+          } else {
+            audioRef.current?.pause();
+            setPlaying(false);
+          }
+        }}
+      >
+        <motion.div className="w-full h-full relative" animate={{ rotateY: flipped ? 180 : 0 }} transition={{ duration: 0.6, type: 'spring' }} style={{ transformStyle: 'preserve-3d' }}>
+          <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${grad} flex flex-col items-center justify-center border-2 border-white/20 shadow-2xl`} style={{ backfaceVisibility: 'hidden' }}>
+            <span className="text-6xl mb-4">{icon}</span>
+            <span className="text-white/50 text-lg font-bold">Tap to flip!</span>
+          </div>
+          <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${grad} flex flex-col items-center justify-center p-8 border-2 border-yellow-400/30 shadow-2xl`} style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+            <span className="text-5xl mb-4">{icon}</span>
+            <p className="text-white text-center text-lg font-bold leading-relaxed">{capsule.wisdom_card_text}</p>
+            {playing && (
+              <motion.div className="mt-4 flex items-center gap-1" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <motion.div key={i} className="w-1.5 bg-yellow-400 rounded-full" animate={{ height: [6, 16 + 10 * Math.random(), 6] }} transition={{ repeat: Infinity, duration: 0.4 + 0.3 * Math.random() }} />
+                ))}
+              </motion.div>
+            )}
+            <div className="absolute bottom-4 w-12 h-12 rounded-full border-2 border-yellow-400/50 flex items-center justify-center">
+              <span className="text-yellow-400 font-black">{dayNumber}</span>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// Video screen
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function VideoScreen({ capsule, onBack }: { capsule: any; onBack: () => void }) {
+  return (
+    <motion.div className="min-h-screen flex flex-col items-center justify-center px-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <BackButton onBack={onBack} />
+      {capsule.video_url && (
+        <motion.video src={capsule.video_url} controls className="w-full max-w-md rounded-3xl shadow-2xl" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring' }} />
+      )}
+    </motion.div>
+  );
+}
+
 export default function DayPage() {
   const params = useParams();
   const router = useRouter();
@@ -306,6 +422,9 @@ export default function DayPage() {
         {view === 'love' && <LoveScreen key="love" capsule={capsule} onBack={() => setView('cards')} />}
         {view === 'map' && <MapDetailScreen key="mapdetail" capsule={capsule} onBack={() => setView('cards')} />}
         {view === 'worksite' && <WorksiteScreen key="worksite" capsule={capsule} onBack={() => setView('cards')} />}
+        {view === 'bedtime' && <BedtimeScreen key="bedtime" capsule={capsule} dayNumber={dayNumber} onBack={() => setView('cards')} />}
+        {view === 'wisdom' && <WisdomScreen key="wisdom" capsule={capsule} dayNumber={dayNumber} onBack={() => setView('cards')} />}
+        {view === 'video' && <VideoScreen key="video" capsule={capsule} onBack={() => setView('cards')} />}
       </AnimatePresence>
     </div>
   );
